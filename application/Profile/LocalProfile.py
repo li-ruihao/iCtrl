@@ -32,8 +32,6 @@ _EMPTY_SESSION = {
     "username": ""
 }
 
-ksahdklaldsadljasdkasl
-
 _EMPTY_USER_PROFILE = {
     "version": _PROFILE_VERSION,
     "sessions": {},
