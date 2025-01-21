@@ -21,24 +21,27 @@ import logging.config
 import os
 import sys
 
+import application.paths
 import yaml
 from flask import Flask, Blueprint, jsonify
 from werkzeug.exceptions import HTTPException
 from werkzeug.serving import WSGIRequestHandler
 
-logger = logging.getLogger(__name__)
-
 try:
     with open('log_config.yaml') as config_file:
         config = yaml.safe_load(config_file.read())
 
-    os.makedirs(os.path.join(os.getcwd(), 'logs'), exist_ok=True)
+    config['handlers']['timedRotatingFile']['filename'] = paths.LOG_FILE_PATH
+    paths.makedir_if_not_exists(paths.LOGS_DIR_PATH)
     logging.config.dictConfig(config)
 except Exception:
     # Fallback to a basic configuration
     logging.basicConfig(format='%(asctime)s %(levelname)s [%(name)s:%(lineno)d] %(message)s', level=logging.INFO, force=True)
+
+    logger = logging.getLogger(__name__)
     logger.exception("Logging setup failed")
 else:
+    logger = logging.getLogger(__name__)
     logger.warning("Logging setup is completed with config=%s", config)
 
 from .Profile.Profile import Profile

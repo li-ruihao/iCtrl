@@ -1,5 +1,5 @@
 version: 1
-disable_existing_loggers: False
+disable_existing_loggers: True
 
 formatters:
     default:
@@ -12,15 +12,15 @@ handlers:
         level: DEBUG
         formatter: default
         stream: ext://sys.stderr
-    file_rotating:
+    timedRotatingFile:
         class: logging.handlers.TimedRotatingFileHandler
         level: DEBUG
-        filename: logs/ictrl_log.log
         formatter: default
-        when: 'midnight'
-        interval: 1
-        backupCount: 14
+        when: H
+        interval: 3
+        backupCount: 112
+        # filename: dynamically assigned upon the initialization of the program
 
 root:
     level: DEBUG
-    handlers: [console, file_rotating]
+    handlers: [console, timedRotatingFile]
