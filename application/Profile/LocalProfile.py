@@ -104,13 +104,13 @@ class LocalProfile(Profile):
 
     def delete_session(self, session_id) -> tuple[bool, str]:
         if session_id not in self._profile['sessions']:
-            logger.error('Cannot delete session %s, session does not exist', session_id)
+            logger.warning('Cannot delete session %s, session does not exist', session_id)
             return False, f'failed: session {session_id} does not exist'
 
         try:
             os.remove(os.path.join(PRIVATE_KEY_PATH, session_id))
         except FileNotFoundError:
-            logger.exception('No valid SSH key found for deletion')
+            logger.warning('No valid SSH key found for deletion')
 
         self._profile['sessions'].pop(session_id)
         self.save_profile()
@@ -121,7 +121,7 @@ class LocalProfile(Profile):
 
     def change_host(self, session_id, new_host) -> tuple[bool, str]:
         if session_id not in self._profile['sessions']:
-            logger.error("Cannot change host, session %s does not exist", session_id)
+            logger.warning("Cannot change host, session %s does not exist", session_id)
             return False, f'failed: session {session_id} does not exist'
 
         self._profile["sessions"][session_id]['host'] = new_host
@@ -206,7 +206,7 @@ class LocalProfile(Profile):
             logger.error("Cannot retrieve session %s, session does not exist", session_id)
             return False, f'failed: session {session_id} does not exist'
 
-        logger.info("Retrieving vnc credentials for session %s", session_id)
+        logger.debug("Retrieving VNC credentials for session %s", session_id)
         if 'vnc_credentials' in self._profile['sessions'][session_id]:
             json_str = base64.b64decode(self._profile['sessions'][session_id]['vnc_credentials'])
             return True, json.loads(json_str.decode('ascii'))

@@ -83,7 +83,7 @@ class DBProfile(Profile):
                 self.activation_email_body_template = f.read()
         except OSError as e:
             logger.exception('Failed to open "%s"', ACTIVATION_EMAIL_TEMPLATE)
-            raise e
+            raise
 
         class User(db.Model):
             __table_args__ = {"schema": "ictrl"}
@@ -217,7 +217,7 @@ class DBProfile(Profile):
                 "username": session.username
             }
 
-        logger.info("Query user sessions successful, all user sessions:\n%s", json.dumps(_profile))
+        logger.info("User sessions queried successfully.")
 
         return _profile
 
@@ -436,6 +436,6 @@ class DBProfile(Profile):
             expire_min=int(ACTIVATION_TTL_SECOND / 60))
         send_email(user.email, 'Activate Your iCtrl Account', body)
 
-        logger.info("Successfully sent out activation email to email=%s", user.email)
+        logger.info("Successfully sent out activation email to user ID=%s", user.id)
 
         return True

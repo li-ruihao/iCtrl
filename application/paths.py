@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 def makedir_if_not_exists(path):
     if not os.path.exists(path):
         os.mkdir(path)
-    logger.info('Created directory, path = %s', path)
+    logger.info('Created directory at path = %s', path)
 
 
 # setup profile path
@@ -38,7 +38,8 @@ if platform.system() == "Windows":
 elif platform.system() == "Darwin" or 'Linux':
     PROFILE_PATH = os.path.join(os.path.expanduser("~"), ".ictrl")
 else:
-    logger.error("Operating System: %s not supported", platform.system())
+    logger.error("Unsupported operating system detected - OS: %s, Version: %s, Machine: %s",
+                 platform.system(), platform.version(), platform.machine())
     raise SystemError(f"Operating System: {platform.system()} not supported")
 
 makedir_if_not_exists(PROFILE_PATH)

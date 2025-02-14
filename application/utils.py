@@ -64,7 +64,7 @@ def send_email(to_email, subject, body):
 
     server_ssl.sendmail(sender_email, to_email, msg.as_string())
 
-    logger.info('Successfully sent email from %s to %s', sender_email, to_email)
+    logger.info('Successfully sent email from %s to %s', mask_email(sender_email), mask_email(to_email))
 
     server_ssl.close()
 
@@ -125,3 +125,35 @@ def local_auth(headers, abort_func):
             abort_func(403, "You are not authorized to access this API.")
 
     return auth_passed
+
+
+def mask_email(email: str) -> str:
+    """
+    Masks an email address for secure logging by keeping first character and domain.
+
+    Example:
+         mask_email("user@example.com")
+        'u***@example.com'
+         mask_email("a.b.c@sub.example.com")
+        'a***@sub.example.com'
+         mask_email("invalid.email")
+        '***@***'
+
+    Args:
+        email: The email address to mask
+
+    Returns:
+        Masked email address with only first character and domain visible
+    """
+    try:
+        if '@' not in email:
+            return '***@***'
+
+        local, domain = email.split('@', 1)
+        if not local:
+            return '***@' + domain
+
+        masked = local[0] + '*' * (len(local) - 1)
+        return f'{masked}@{domain}'
+    except Exception:
+        return '***@***'  # Fallback for any parsing errors
