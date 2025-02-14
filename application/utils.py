@@ -28,6 +28,20 @@ from email.mime.text import MIMEText
 
 logger = logging.getLogger(__name__)
 
+# chat-gpt identified headers that are safe to log
+allowed_headers = frozenset({
+    'Host',
+    'User-Agent',
+    'X-Forwarded-For',
+    'X-Real-IP',
+    'Content-Type',
+    'Content-Length',
+    'Accept',
+    'Accept-Encoding',
+    'Accept-Language',
+    'Connection'
+})
+
 
 def int_to_bytes(num):
     return bytes([num])
@@ -105,7 +119,7 @@ def get_headers_dict_from_str(headers_str):
         header_name, header_value = line.split(': ', 1)
         headers[header_name] = header_value
 
-    logger.debug('Extracted HTTP headers, headers = %s', headers)
+    logger.debug('Extracted HTTP headers, headers = %s', filtered_headers_to_log(headers))
 
     return headers
 
@@ -157,3 +171,10 @@ def mask_email(email: str) -> str:
         return f'{masked}@{domain}'
     except Exception:
         return '***@***'  # Fallback for any parsing errors
+
+
+def filtered_headers_to_log(headers: dict) -> dict:
+    if headers is None:
+        return {}
+
+    return {k: v for k, v in headers.items() if k in allowed_headers}
