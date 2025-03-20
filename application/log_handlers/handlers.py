@@ -1,4 +1,5 @@
 import os
+import uuid
 from pathlib import Path
 from typing import Optional
 from clp_logging.handlers import CLPFileHandler, CLPLogLevelTimeout, EOF_CHAR, FLUSH_FRAME
@@ -41,15 +42,65 @@ class RotatingCLPFileHandler(CLPFileHandler):
             loglevel_timeout=loglevel_timeout,
         )
 
+    @staticmethod
+    def _get_persistent_machine_uuid() -> str:
+        """
+        Retrieves a persistent machine-specific UUID:
+        - First checks the `iCtrl_LOG_UUID` environment variable.
+        - If not found, checks a system-wide file (`/etc/iCtrl_machine_log_uuid` or `~/.iCtrl_machine_log_uuid`).
+        - If still not found, generates a new UUID, saves it, and returns only the first 8 characters.
+        """
+        env_var_name = "iCtrl_LOG_UUID"
+
+        # 1️⃣ Check if UUID exists in an environment variable
+        env_uuid = os.getenv(env_var_name)
+        if env_uuid:
+            return env_uuid.strip()[:8]  # Limit to first 8 characters
+
+        # 2️⃣ Define a persistent file path
+        if os.name == "nt":  # Windows
+            uuid_file = Path(os.getenv("APPDATA", "C:/ProgramData")) / "iCtrl_machine_log_uuid.txt"
+        else:  # Linux/macOS
+            uuid_file = Path(
+                "/etc/iCtrl_machine_log_uuid") if os.geteuid() == 0 else Path.home() / ".iCtrl_machine_log_uuid"
+
+        # 3️⃣ Check if the file exists and read the UUID
+        if uuid_file.exists():
+            with open(uuid_file, "r") as f:
+                machine_uuid = f.read().strip()[:8]  # Limit to first 8 characters
+                os.environ[env_var_name] = machine_uuid  # Store in environment for future use
+                return machine_uuid
+
+        # 4️⃣ Generate a new UUID and store only the first 8 characters
+        new_uuid = str(uuid.uuid4())[:8]
+
+        try:
+            with open(uuid_file, "w") as f:
+                f.write(new_uuid)
+            os.environ[env_var_name] = new_uuid  # Store in environment
+        except PermissionError:
+            print(f"Warning: Could not save machine UUID to {uuid_file}. Using in-memory only.")
+
+        return new_uuid
+
     def _generate_log_filename(self) -> Path:
         """
-        Generate a log filename with the timestamp and prefix.
+        Generate a log filename with the prefix, persistent UUID and timestamp.
+        If a file with the same name already exists, append a counter (_1, _2, etc.).
         """
-        start_time = datetime.now()
-        timestamp = start_time.strftime(self.timestamp_format)
-        self.current_log_file = Path(f"{self.log_dir}/{self.filename_prefix}_{timestamp}.clp.zst")
+        uuid_str = self._get_persistent_machine_uuid()  # Get the persistent UUID
+        timestamp = datetime.now().strftime(self.timestamp_format)
 
-        return self.current_log_file
+        base_filename = f"{self.filename_prefix}_{uuid_str}_{timestamp}"
+        file_path = self.log_dir / f"{base_filename}.clp.zst"
+
+        # Check for name conflicts and append a counter if necessary
+        counter = 1
+        while file_path.exists():
+            file_path = self.log_dir / f"{base_filename}_{counter}.clp.zst"
+            counter += 1
+
+        return file_path
 
     def _should_rotate(self) -> bool:
         """
@@ -62,7 +113,7 @@ class RotatingCLPFileHandler(CLPFileHandler):
 
     def _rotate(self) -> None:
         """
-        Perform log rotation by finalizing the current stream, creating a new log file, 
+        Perform log rotation by finalizing the current stream, creating a new log file,
         and reinitializing the handler with the new stream.
 
         This method is responsible for:
@@ -73,7 +124,7 @@ class RotatingCLPFileHandler(CLPFileHandler):
         5. Opening a new stream for the new log file and reinitializing the handler to use it.
         6. Removing old log files if the number of backups exceeds the specified backup count.
 
-        Thread safety is ensured by acquiring and releasing the handler's lock during the 
+        Thread safety is ensured by acquiring and releasing the handler's lock during the
         transition between streams.
         """
         try:
@@ -82,7 +133,7 @@ class RotatingCLPFileHandler(CLPFileHandler):
         finally:
             self.ostream.close()
 
-        # Generate a new log filename
+        # Generate a new log filename (same UUID, new timestamp)
         new_log_file = self._generate_log_filename()
 
         # Initialize the new stream
@@ -103,13 +154,15 @@ class RotatingCLPFileHandler(CLPFileHandler):
 
     def _remove_old_backups(self) -> None:
         """
-        Remove old log files exceeding the backup count.
+        Remove old log files exceeding the backup count, but only for the current machine UUID.
         """
         if not self.backup_count:
             return
 
+        uuid_str = self._get_persistent_machine_uuid()  # Get the persistent UUID
+
         log_files = sorted(
-            self.log_dir.glob(f"{self.filename_prefix}_*.clp.zst"),
+            self.log_dir.glob(f"{self.filename_prefix}_{uuid_str}_*.clp.zst"),
             key=os.path.getmtime,
         )
         if len(log_files) > self.backup_count:

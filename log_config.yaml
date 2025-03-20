@@ -16,7 +16,7 @@ handlers:
         max_bytes: 5242880  # Rotate after 5 MB
         backup_count: 20  # Keep 20 backup files
         enable_compression: True
-        timestamp_format: '%Y-%m-%d'
+        timestamp_format: '%Y-%m-%d_%H-%M-%S'
 
 root:
     level: DEBUG
