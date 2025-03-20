@@ -27,6 +27,7 @@ from werkzeug.exceptions import HTTPException
 from werkzeug.serving import WSGIRequestHandler
 
 global logger
+os.makedirs('logs', exist_ok=True)
 
 try:
     with open('log_config.yaml') as config_file:

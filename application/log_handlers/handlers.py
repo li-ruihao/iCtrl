@@ -4,21 +4,22 @@ from typing import Optional
 from clp_logging.handlers import CLPFileHandler, CLPLogLevelTimeout, EOF_CHAR, FLUSH_FRAME
 from datetime import datetime
 
+
 class RotatingCLPFileHandler(CLPFileHandler):
     """
     Extends `CLPFileHandler` to support file size-based log rotation.
     """
 
     def __init__(
-        self,
-        filename_prefix: str,
-        log_dir: Path,
-        max_bytes: int,
-        backup_count: int = 5,
-        mode: str = "ab",
-        enable_compression: bool = True,
-        timestamp_format: str = "%Y%m%d_%H%M%S",
-        loglevel_timeout: Optional[CLPLogLevelTimeout] = None,
+            self,
+            filename_prefix: str,
+            log_dir: Path,
+            max_bytes: int,
+            backup_count: int = 20,
+            mode: str = "ab",
+            enable_compression: bool = True,
+            timestamp_format: str = "%Y-%m-%d_%H-%M-%S",
+            loglevel_timeout: Optional[CLPLogLevelTimeout] = None,
     ) -> None:
         self.filename_prefix = filename_prefix
         self.log_dir = Path(log_dir)
@@ -39,7 +40,7 @@ class RotatingCLPFileHandler(CLPFileHandler):
             timestamp_format=timestamp_format,
             loglevel_timeout=loglevel_timeout,
         )
-    
+
     def _generate_log_filename(self) -> Path:
         """
         Generate a log filename with the timestamp and prefix.
@@ -58,7 +59,6 @@ class RotatingCLPFileHandler(CLPFileHandler):
             return self.current_log_file.stat().st_size >= self.max_bytes
         except FileNotFoundError:
             return False
-
 
     def _rotate(self) -> None:
         """

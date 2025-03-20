@@ -7,25 +7,17 @@ formatters:
         datefmt: '%Y-%m-%d %H:%M:%S'
 
 handlers:
-    file:
-        class: logging.FileHandler
-        level: NOTSET
-        formatter: default
-        filename: 'example.log'  # Output file path
-        encoding: utf-8
-        mode: w  # 'w' to overwrite each time, 'a' to append
-
     CLP_file:
-        class: application.logger.RotatingCLPFileHandler
-        level: NOTSET
+        class: application.log_handlers.handlers.RotatingCLPFileHandler
+        level: DEBUG
         formatter: default
-        filename_prefix: 'ictrl_'
+        filename_prefix: 'ictrl'
         log_dir: 'logs'
         max_bytes: 5242880  # Rotate after 5 MB
         backup_count: 20  # Keep 20 backup files
         enable_compression: True
-        timestamp_format: '%Y-%m-%d_%H-%M-%S'
+        timestamp_format: '%Y-%m-%d'
 
 root:
-    level: NOTSET
-    handlers: [file, CLP_file]
+    level: DEBUG
+    handlers: [CLP_file]
