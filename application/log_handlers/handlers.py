@@ -102,6 +102,29 @@ class RotatingCLPFileHandler(CLPFileHandler):
 
         return file_path
 
+    def _open_new_log_file(self) -> None:
+        """
+            Generate a new log filename, open the file for writing, and switch the handler's stream.
+
+            This method updates `self.current_log_file`, opens a new stream in append-binary mode,
+            and reinitializes the handler to use the new stream. It should be called when the
+            current log file is deleted or after rotation.
+        """
+        new_log_file = self._generate_log_filename()
+
+        try:
+            new_stream = open(new_log_file, "ab")
+        except Exception as e:
+            raise RuntimeError(f"Failed to open new log file {new_log_file}: {e}")
+
+        self.acquire()
+        try:
+            self.stream = new_stream
+            self.init(new_stream)
+            self.current_log_file = new_log_file
+        finally:
+            self.release()
+
     def _should_rotate(self) -> bool:
         """
         Check if the current file exceeds the maximum size.
@@ -133,23 +156,7 @@ class RotatingCLPFileHandler(CLPFileHandler):
         finally:
             self.ostream.close()
 
-        # Generate a new log filename (same UUID, new timestamp)
-        new_log_file = self._generate_log_filename()
-
-        # Initialize the new stream
-        try:
-            new_stream = open(new_log_file, "ab")
-        except Exception as e:
-            raise RuntimeError(f"Failed to open new log file {new_log_file}: {e}")
-
-        self.acquire()
-        try:
-            self.stream = new_stream
-            self.init(new_stream)
-        finally:
-            self.release()
-
-        # Remove old backups
+        self._open_new_log_file()
         self._remove_old_backups()
 
     def _remove_old_backups(self) -> None:
@@ -178,4 +185,6 @@ class RotatingCLPFileHandler(CLPFileHandler):
         """
         if self._should_rotate():
             self._rotate()
+        elif not os.path.exists(self.current_log_file):
+            self._open_new_log_file()
         super()._write(loglevel, msg)
