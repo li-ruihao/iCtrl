@@ -13,6 +13,14 @@ handlers:
         formatter: default
         stream: ext://sys.stderr
 
+    file:
+        class: logging.FileHandler
+        level: DEBUG
+        formatter: default
+        filename: 'logs/example.log'  # Output file path
+        encoding: utf-8
+        mode: w  # 'w' to overwrite each time, 'a' to append
+
 root:
     level: DEBUG
-    handlers: [console]
+    handlers: [console, file]
