@@ -26,8 +26,6 @@ from flask import Flask, Blueprint, jsonify
 from werkzeug.exceptions import HTTPException
 from werkzeug.serving import WSGIRequestHandler
 
-global logger
-
 try:
     with open('log_config.yaml') as config_file:
         config = yaml.safe_load(config_file.read())
