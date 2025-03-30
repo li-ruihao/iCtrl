@@ -32,7 +32,6 @@ try:
         config = yaml.safe_load(config_file.read())
 
     config['handlers']['timedRotatingFile']['filename'] = paths.LOG_FILE_PATH
-    paths.makedir_if_not_exists(paths.LOGS_DIR_PATH)
     logging.config.dictConfig(config)
 except Exception:
     # Fallback to a basic configuration
